@@ -7,7 +7,6 @@ import { imageBoxStyle, isSuccesscode } from "@/lib/utils";
 import { GET, POST } from "@/services/api";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { ethers } from "ethers";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 
@@ -15,13 +14,6 @@ const Donate = () => {
   const { id } = useParams()
   const [modalOpened, setModalOpened] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
-
-
-
-
-  // @ts-ignore: Providers is available
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
 
   const { data:imageURL } = useQuery({
     queryKey: [`images-${id}`],
@@ -68,75 +60,38 @@ const Donate = () => {
     setModalOpened(false)
   }
 
-
-
-
-
-  const handleTransfer = async () => {
-    try {
-      // Ensure that the address and amount are valid
-      if (!ethers.utils.isAddress(toAddress)) {
-        setMessage('Invalid address');
-        return;
-      }
-
-      if (isNaN(parseFloat(amount))) {
-        setMessage('Invalid amount');
-        return;
-      }
-
-      // Convert the amount to Wei (the smallest unit of Ether)
-      const weiAmount = ethers.utils.parseEther(amount);
-
-      // Send transaction to the smart contract
-      const tx = await contract.receiveEther({
-          value: weiAmount
-      });
-
-      await tx.wait(); // Wait for transaction to be mined
-
-        setMessage('Transaction successful');
-    } catch (error) {
-        setMessage('Transaction failed: ' + error.message);
+  const sendTransaction = async () => {
+    closeModal()
+    if (!window.ethereum) {
+      console.log('MetaMask is not installed');
+      return;
     }
-  };
 
+    try {
+      const accounts:any = await window?.ethereum?.request({ method: 'eth_requestAccounts' });
+      const account = accounts[0];
 
+      const transactionParameters = {
+        nonce: '0x00', // ignored by MetaMask
+        to: donation.wallet, // Required except during contract publications.
+        from: account, // must match user's active address.
+        value: '0x29a2241af62c0000', // hex value of the amount of wei to send
+        gasPrice: '0x09184e72a000', // customizable by user during MetaMask confirmation.
+        gas: '0x2710', // customizable by user during MetaMask confirmation.
+      };
 
-
-
-  // const sendTransaction = async () => {
-  //   closeModal()
-  //   if (!window.ethereum) {
-  //     console.log('MetaMask is not installed');
-  //     return;
-  //   }
-
-  //   try {
-  //     const accounts:any = await window?.ethereum?.request({ method: 'eth_requestAccounts' });
-  //     const account = accounts[0];
-
-  //     const transactionParameters = {
-  //       nonce: '0x00', // ignored by MetaMask
-  //       to: donation.wallet, // Required except during contract publications.
-  //       from: account, // must match user's active address.
-  //       value: '0x29a2241af62c0000', // hex value of the amount of wei to send
-  //       gasPrice: '0x09184e72a000', // customizable by user during MetaMask confirmation.
-  //       gas: '0x2710', // customizable by user during MetaMask confirmation.
-  //     };
-
-  //     const txHash:any = await window.ethereum.request({
-  //       method: 'eth_sendTransaction',
-  //       params: [transactionParameters],
-  //     });
-  //     await POST("/donations/track", {
-  //       transactionHash: txHash,
-  //       donationId: donation.id
-  //     })
-  //   } catch (error) {
-  //     console.error('Error sending transaction:', error);
-  //   }
-  // }
+      const txHash:any = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [transactionParameters],
+      });
+      await POST("/donations/track", {
+        transactionHash: txHash,
+        donationId: donation.id
+      })
+    } catch (error) {
+      console.error('Error sending transaction:', error);
+    }
+  }
 
   const copyLink = () => {
     const link = "hello"
