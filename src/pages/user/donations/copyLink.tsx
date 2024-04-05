@@ -7,7 +7,7 @@ import { useLocation } from "react-router-dom"
 const CopyLink = () => {
   const location = useLocation()
   const { id } = location.state
-  const link = `http://localhost:5173/donations/${id}`
+  const link = `https://radix-olive.vercel.app/donations/${id}`
   const [copied, setCopied] = useState(false)
 
   const copy = () => {
