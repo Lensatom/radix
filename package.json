@@ -17,6 +17,7 @@
     "axios": "^1.6.8",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "ethers": "^6.11.1",
     "install": "^0.13.0",
     "lucide-react": "^0.364.0",
     "npm": "^10.5.1",
